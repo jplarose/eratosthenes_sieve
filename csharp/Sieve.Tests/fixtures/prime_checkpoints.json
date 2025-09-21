@@ -1,0 +1,59 @@
+{
+  "pi_checkpoints": [
+    {
+      "x": 10,
+      "pi_x": 4
+    },
+    {
+      "x": 100,
+      "pi_x": 25
+    },
+    {
+      "x": 1000,
+      "pi_x": 168
+    },
+    {
+      "x": 10000,
+      "pi_x": 1229
+    },
+    {
+      "x": 100000,
+      "pi_x": 9592
+    },
+    {
+      "x": 1000000,
+      "pi_x": 78498
+    }
+  ],
+  "p_n_checkpoints": [
+    {
+      "n_1_based": 10,
+      "index_0_based": 9,
+      "p_n": 29
+    },
+    {
+      "n_1_based": 100,
+      "index_0_based": 99,
+      "p_n": 541
+    },
+    {
+      "n_1_based": 1000,
+      "index_0_based": 999,
+      "p_n": 7919
+    },
+    {
+      "n_1_based": 10000,
+      "index_0_based": 9999,
+      "p_n": 104729
+    },
+    {
+      "n_1_based": 100000,
+      "index_0_based": 99999,
+      "p_n": 1299709
+    }
+  ],
+  "notes": {
+    "indexing": "index_0_based means prime[0]=2; n_1_based uses p_1=2.",
+    "method": "Generated via Eratosthenes sieve; OK for fixture validation."
+  }
+}
