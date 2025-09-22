@@ -8,7 +8,8 @@ namespace Sieve
         /// <summary>
         /// How to choose the algorithm. <see cref="SieveMethod.Auto"/> selects
         /// <see cref="SieveMethod.Regular"/> for n &lt; <see cref="RegularSieveThreshold"/>,
-        /// otherwise <see cref="SieveMethod.Segmented"/>.
+        /// <see cref="SieveMethod.Segmented"/> for medium n, and 
+        /// <see cref="SieveMethod.PrimeCounting"/> for very large n (&gt;= 10M).
         /// </summary>
         public SieveMethod Method { get; set; } = SieveMethod.Auto;
 
@@ -24,6 +25,13 @@ namespace Sieve
         /// <see cref="SieveMethod.Regular"/> to <see cref="SieveMethod.Segmented"/>. Compared against n (0-based).
         /// </summary>
         public long RegularSieveThreshold { get; set; } = 1_000_000;
+
+        /// <summary>
+        /// Boundary used by <see cref="SieveMethod.Auto"/> to decide when to switch to
+        /// <see cref="SieveMethod.PrimeCounting"/>. For n >= this threshold, Lucy-Hedgehog
+        /// prime counting with binary search is used instead of linear sieving.
+        /// </summary>
+        public long PrimeCountingThreshold { get; set; } = 10_000_000;
 
         /// <summary>
         /// Optional callback to receive advisory messages about potentially suboptimal option

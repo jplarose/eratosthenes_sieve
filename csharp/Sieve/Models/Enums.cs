@@ -4,6 +4,7 @@ namespace Sieve
     {
         Auto,
         Regular,
-        Segmented
+        Segmented,
+        PrimeCounting
     }
 }

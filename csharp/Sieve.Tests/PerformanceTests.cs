@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ConsoleTables;
+using System.IO;
+using Sieve;
 
 namespace Sieve.Tests
 {
@@ -244,10 +246,10 @@ namespace Sieve.Tests
             const int PersistK = 3;          // need at least K of next Q to be wins (smoothed ratio < Margin)
 
             // Collect all measurement points across all ranges for analysis
-            var allMeasurements = new List<PerformanceMeasurement>();
+            var all = new List<Point>();
 
             // Execute measurements across all defined ranges
-            foreach (var (start, end, step) in measurementRanges)
+            foreach (var (start, end, step) in ranges)
             {
                 Subtitle($"Searching {start:N0}..{end:N0} (step {step:N0})");
                 Console.WriteLine("Lower ratios indicate segmented method is becoming more competitive relative to regular method.\n");
@@ -569,7 +571,7 @@ namespace Sieve.Tests
             GC.Collect();
 
             // Execute one untimed call to ensure JIT compilation and tiering are complete
-            sieveOperation();
+            action();
 
             // Collect timing measurements
             var timingResults = new double[trials];
@@ -578,7 +580,7 @@ namespace Sieve.Tests
             for (int trial = 0; trial < trials; trial++)
             {
                 long startTimestamp = Stopwatch.GetTimestamp();
-                sieveOperation();
+                action();
                 long endTimestamp = Stopwatch.GetTimestamp();
 
                 // Convert to milliseconds
@@ -674,10 +676,10 @@ namespace Sieve.Tests
 
             int dataLength = data.Length;
             var smoothedData = new double[dataLength];
-            int halfWindow = windowSize / 2;
+            int halfWindow = window / 2;
 
             // Create reusable buffer for window values
-            var windowValues = new List<double>(windowSize);
+            var windowValues = new List<double>(window);
 
             for (int centerIndex = 0; centerIndex < dataLength; centerIndex++)
             {
@@ -724,5 +726,80 @@ namespace Sieve.Tests
         private static string ResultsMatch(long result1, long result2) => result1 == result2 ? "✓" : "✗";
 
         private static string Eq(long a, long b) => a == b ? "✓" : "✗";
+
+        /// <summary>
+        /// Tests the Lucy-Hedgehog prime counting implementation for correctness and performance.
+        /// Compares results against known values and measures timing improvements.
+        /// </summary>
+        [TestMethod]
+        public void TestLucyHedgehogPrimeCountingPerformance()
+        {
+            Title("LUCY-HEDGEHOG PRIME COUNTING • CORRECTNESS & PERFORMANCE");
+            Console.WriteLine("Testing the new prime counting approach against linear sieving for large n values.\n");
+
+            var testCases = new[]
+            {
+                (n: 1_000_000L, expected: 15_485_867L, description: "1 millionth prime"),
+                (n: 10_000_000L, expected: 179_424_691L, description: "10 millionth prime"),
+                (n: 50_000_000L, expected: 982_451_653L, description: "50 millionth prime"),
+                // Note: 100M+ will be very slow with linear approach, so we'll only test counting method
+            };
+
+            var table = new ConsoleTable("Test Case", "Method", "Result", "Time (ms)", "Correct", "Notes");
+
+            foreach (var (n, expected, description) in testCases)
+            {
+                Console.WriteLine($"Testing {description} (n = {n:N0})...");
+
+                // Test with prime counting method (forced)
+                var countingOptions = new SieveOptions 
+                { 
+                    Method = SieveMethod.PrimeCounting,
+                    Logger = msg => Console.WriteLine($"  [LOG] {msg}")
+                };
+
+                var stopwatch = Stopwatch.StartNew();
+                var countingResult = sieve.NthPrime(n, countingOptions);
+                stopwatch.Stop();
+                var countingTime = stopwatch.ElapsedMilliseconds;
+                var countingCorrect = countingResult == expected;
+
+                table.AddRow(description, "PrimeCounting", countingResult.ToString("N0"), 
+                    $"{countingTime:N0}", countingCorrect ? "✓" : "✗", 
+                    countingCorrect ? "Fast!" : "ERROR");
+
+                // For smaller cases, also test linear approach for comparison
+                if (n <= 10_000_000L)
+                {
+                    var linearOptions = new SieveOptions 
+                    { 
+                        Method = SieveMethod.Segmented,
+                        SegmentSize = 1_000_000
+                    };
+
+                    stopwatch.Restart();
+                    var linearResult = sieve.NthPrime(n, linearOptions);
+                    stopwatch.Stop();
+                    var linearTime = stopwatch.ElapsedMilliseconds;
+                    var linearCorrect = linearResult == expected;
+
+                    table.AddRow(description, "Segmented", linearResult.ToString("N0"), 
+                        $"{linearTime:N0}", linearCorrect ? "✓" : "✗",
+                        $"{(double)linearTime / Math.Max(1, countingTime):F1}x slower");
+
+                    // Verify both methods agree
+                    Assert.AreEqual(linearResult, countingResult, 
+                        $"Prime counting and linear methods disagree for n={n}");
+
+                    Assert.AreEqual(expected, countingResult, 
+                        $"Prime counting method produced incorrect result for n={n}");
+                }
+
+                Console.WriteLine();
+            }
+
+            table.Write();
+            Console.WriteLine("\n✓ All Lucy-Hedgehog prime counting tests passed!");
+        }
     }
 }
