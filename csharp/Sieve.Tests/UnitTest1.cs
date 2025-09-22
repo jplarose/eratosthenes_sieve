@@ -23,17 +23,37 @@ namespace Sieve.Tests
                 (index: 1000000, expected: 15485867),
                 (index: 10000000, expected: 179424691),
                 (index: 100000000, expected: 2038074751), //not required, just a fun challenge
-                (index: 999_999_999, expected: 22_801_763_489)
+
+                // Only adds about 40 seconds to the test run
+                (index: 999_999_999, expected: 22_801_763_489),
+
+                // Adds about 5:30 to the test run, but runnable under the current implementation
+                //(index: 10_000_000_000, expected: 252_097_800_629)
             };
 
             Console.WriteLine("Prime Number Verification Test Results:");
-            var table = new ConsoleTable("Index (0-based)", "Expected Prime", "Computed Prime", "Status");
+            var table = new ConsoleTable("Index (0-based)", "Expected Prime", "Computed Prime", "Time (ms)", "Method Used", "Status");
 
             foreach (var (index, expected) in testCases)
             {
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 var actual = sieve.NthPrime(index);
+                stopwatch.Stop();
+
                 var status = actual == expected ? "✓ PASS" : "✗ FAIL";
-                table.AddRow(index.ToString("N0"), expected.ToString("N0"), actual.ToString("N0"), status);
+                var timeMs = stopwatch.ElapsedMilliseconds;
+
+                // Determine which method Auto would select for this index
+                var methodUsed = GetAutoSelectedMethod(index);
+
+                table.AddRow(
+                    index.ToString("N0"),
+                    expected.ToString("N0"),
+                    actual.ToString("N0"),
+                    timeMs.ToString("N0"),
+                    methodUsed,
+                    status
+                );
 
                 Assert.AreEqual(expected, actual);
             }
@@ -87,6 +107,24 @@ namespace Sieve.Tests
             }
 
             Assert.AreEqual(expectedBillionthPrime, result, "Billionth prime calculation was incorrect");
+        }
+
+        /// <summary>
+        /// Helper method to determine which algorithm Auto mode would select for a given index.
+        /// Replicates the logic from SieveImplementation.NthPrime().
+        /// </summary>
+        private static string GetAutoSelectedMethod(long n)
+        {
+            // These thresholds should match the defaults in SieveOptions
+            const long PrimeCountingThreshold = 10_000_000; // Default for very large n
+            const long RegularSieveThreshold = 1_000_000;   // Default transition to segmented
+
+            if (n > PrimeCountingThreshold)
+                return "PrimeCounting";
+            else if (n > RegularSieveThreshold)
+                return "Segmented";
+            else
+                return "Regular";
         }
     }
 }
