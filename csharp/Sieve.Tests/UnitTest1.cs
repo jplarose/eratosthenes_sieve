@@ -63,7 +63,7 @@ namespace Sieve.Tests
         }
 
         [TestMethod]
-        public void TestBillionthPrimeWithLucyHedgehog()
+        public void TestBillionthPrime()
         {
             Console.WriteLine("Testing Billionth Prime with Lucy-Hedgehog Prime Counting:");
             Console.WriteLine("This test demonstrates the dramatic performance improvement for very large n.\n");
@@ -88,7 +88,7 @@ namespace Sieve.Tests
 
             var table = new ConsoleTable("Metric", "Value");
             table.AddRow("Target Index (0-based)", billionthIndex.ToString("N0"));
-            table.AddRow("Expected Prime", expectedBillionthPrime.ToString("N0"));
+            table.AddRow("Expected Prime\n Source: https://t5k.org/curios/page.php/22801763489.html", expectedBillionthPrime.ToString("N0"));
             table.AddRow("Computed Prime", result.ToString("N0"));
             table.AddRow("Execution Time", $"{stopwatch.ElapsedMilliseconds:N0} ms ({stopwatch.Elapsed.TotalSeconds:F1} seconds)");
             table.AddRow("Method Used", "Lucy-Hedgehog Prime Counting");
@@ -99,7 +99,6 @@ namespace Sieve.Tests
             if (stopwatch.ElapsedMilliseconds < 60_000) // Less than 1 minute
             {
                 Console.WriteLine($"\n🎉 SUCCESS! Found billionth prime in {stopwatch.Elapsed.TotalSeconds:F1} seconds!");
-                Console.WriteLine("This is a dramatic improvement over the previous ~7 minute runtime.");
             }
             else
             {
