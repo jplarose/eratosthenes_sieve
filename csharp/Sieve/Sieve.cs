@@ -58,9 +58,9 @@ namespace Sieve
 
             if (method == SieveMethod.Auto)
             {
-                if (n > options.PrimeCountingThreshold)
+                if (n >= options.PrimeCountingThreshold)
                     method = SieveMethod.PrimeCounting;
-                else if (n > options.RegularSieveThreshold)
+                else if (n >= options.RegularSieveThreshold)
                     method = SieveMethod.Segmented;
                 else
                     method = SieveMethod.Regular;

@@ -270,9 +270,9 @@ namespace Sieve.Tests
             const long PrimeCountingThreshold = 10_000_000; // Default for very large n
             const long RegularSieveThreshold = 1_000_000;   // Default transition to segmented
 
-            if (n > PrimeCountingThreshold)
+            if (n >= PrimeCountingThreshold)
                 return "PrimeCounting";
-            else if (n > RegularSieveThreshold)
+            else if (n >= RegularSieveThreshold)
                 return "Segmented";
             else
                 return "Regular";
