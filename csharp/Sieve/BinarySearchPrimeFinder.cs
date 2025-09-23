@@ -1,14 +1,12 @@
 namespace Sieve
 {
     /// <summary>
-    /// Binary search-based prime finding using Lucy-Hedgehog prime counting.
-    /// Efficient for finding very large prime indices by avoiding linear scanning.
+    /// Binary search with Lucy-Hedgehog counting for finding very large primes.
     /// </summary>
     public static class BinarySearchPrimeFinder
     {
         /// <summary>
-        /// Uses binary search with Lucy-Hedgehog prime counting to find the nth prime efficiently.
-        /// This approach avoids linear scanning for very large n values.
+        /// Finds nth prime using binary search with Lucy-Hedgehog counting.
         /// </summary>
         public static long FindNthPrime(long n, SieveOptions options)
         {
@@ -17,7 +15,7 @@ namespace Sieve
             long lo = PrimeBounds.EstimateLowerBound(target);
             long hi = PrimeBounds.EstimateUpperBound(target);
 
-            // Precompute primes up to sqrt(hi) for prime counting
+            // Precompute base primes for counting
             int rootHi = checked((int)Math.Floor(Math.Sqrt(hi)));
             var smallPrimes = SieveImplementation.SieveOddsOnly(rootHi);
 
@@ -34,13 +32,13 @@ namespace Sieve
         }
 
         /// <summary>
-        /// Finds the exact nth prime near the estimated position using local segmented sieve.
+        /// Finds exact nth prime using local segmented search around estimate.
         /// </summary>
         private static long FindExactPrimeNear(long estimate, long n, SieveOptions options)
         {
-            // Use a much smaller, more targeted window
+            // Create targeted search window around estimate
             long windowSize = Math.Min(1_000_000, Math.Max(10_000, estimate / 10000));
-            long start = Math.Max(2, estimate - windowSize / 4); // Start closer to estimate
+            long start = Math.Max(2, estimate - windowSize / 4);
             long end = estimate + windowSize;
 
             if (options.Logger != null)
@@ -48,13 +46,13 @@ namespace Sieve
                 options.Logger($"Local search window: [{start:N0}, {end:N0}] (size: {windowSize:N0})");
             }
 
-            // Use segmented sieve to find primes in this range
+            // Generate base primes for segmented sieve
             long sqrtEnd = (long)Math.Sqrt(end);
-            var basePrimes = SieveImplementation.SieveOddsOnly(checked((int)Math.Min(sqrtEnd, int.MaxValue - 1))); // no cap
+            var basePrimes = SieveImplementation.SieveOddsOnly(checked((int)Math.Min(sqrtEnd, int.MaxValue - 1)));
 
             long primeCount = 0;
 
-            // Get approximate count up to start using our counting function
+            // Count primes before search window
             if (start > 2)
             {
                 primeCount = LucyHedgehog.PrimeCount(start - 1);
@@ -65,9 +63,9 @@ namespace Sieve
                 options.Logger($"Estimated primes before window: {primeCount:N0}");
             }
 
-            // Now sieve through our target window in smaller chunks
+            // Scan through window in segments
             long segmentStart = start;
-            int segmentSize = Math.Min(options.SegmentSize ?? 100_000, 100_000); // Smaller segments
+            int segmentSize = Math.Min(options.SegmentSize ?? 100_000, 100_000);
 
             while (segmentStart <= end)
             {
@@ -90,22 +88,22 @@ namespace Sieve
                 segmentStart = segmentEnd + 1;
             }
 
-            // If we didn't find it, the estimate was off - expand search
+            // Expand search if not found in initial window
             if (options.Logger != null)
             {
                 options.Logger($"Prime not found in window, expanding search...");
             }
 
-            // Try a larger window
+            // Fallback with larger window
             return FindExactPrimeNearExpanded(estimate, n, options, primeCount);
         }
 
         /// <summary>
-        /// Fallback method with expanded search window.
+        /// Fallback search with larger window.
         /// </summary>
         private static long FindExactPrimeNearExpanded(long estimate, long n, SieveOptions options, long currentCount)
         {
-            // Expand the search window significantly
+            // Create much larger search window
             long windowSize = Math.Max(10_000_000, estimate / 100);
             long start = Math.Max(2, estimate - windowSize / 2);
             long end = estimate + windowSize;
@@ -115,11 +113,11 @@ namespace Sieve
                 options.Logger($"Expanded search window: [{start:N0}, {end:N0}]");
             }
 
-            // Reset count and search from beginning of expanded window
+            // Recalculate starting count for expanded window
             long primeCount = start > 2 ? LucyHedgehog.PrimeCount(start - 1) : 0;
 
             long sqrtEnd = (long)Math.Sqrt(end);
-            var basePrimes = SieveImplementation.SieveOddsOnly(checked((int)Math.Min(sqrtEnd, int.MaxValue - 1))); // no cap
+            var basePrimes = SieveImplementation.SieveOddsOnly(checked((int)Math.Min(sqrtEnd, int.MaxValue - 1)));
 
             long segmentStart = start;
             int segmentSize = options.SegmentSize ?? 1_000_000;

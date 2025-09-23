@@ -1,37 +1,32 @@
 namespace Sieve
 {
     /// <summary>
-    /// Segmented sieve implementation that ensures base primes cover sqrt(end) for each segment.
-    /// Optimized for memory usage and cache performance when finding primes in large ranges.
+    /// Segmented sieve with bounded memory usage and dynamic base prime extension.
     /// </summary>
     public static class SegmentedSieve
     {
         /// <summary>
-        /// Segmented sieve that ensures base primes cover sqrt(end) for each segment.
+        /// Finds nth prime using segmented sieve with dynamic base prime extension.
         /// </summary>
-        /// <remarks>
-        /// SegmentSize is interpreted as "count of integers per segment." Odds-only marking is used inside segments.
-        /// </remarks>
         public static long FindNthPrime(long n, SieveOptions options)
         {
-            int segmentCount = options.SegmentSize ?? 1_000_000; // use provided value or cache-optimized default
+            int segmentCount = options.SegmentSize ?? 1_000_000; // default: 1M integers per segment
             long segmentStart = 2;
             long produced = 0;
 
-            // Start with a modest base bound; will be extended on demand.
+            // Start with modest base primes; extend as needed
             int baseLimit = 1024;
             List<int> basePrimes = SieveImplementation.SieveOddsOnly(baseLimit);
 
             while (true)
             {
                 long segmentEnd = segmentStart + segmentCount - 1;
-                // before each segment:
+                // Ensure base primes cover √(segmentEnd) for correctness
                 long needBase = (long)Math.Floor(Math.Sqrt(Math.Max(4, segmentEnd)));
 
-                // Correct coverage check: ensure we've sieved primes through needBase.
                 if (baseLimit < needBase)
                 {
-                    // grow to at least needBase (pad a little to avoid repeated bumps)
+                    // Extend base primes with padding to avoid frequent re-computation
                     baseLimit = (int)Math.Min(
                         int.MaxValue - 1,
                         Math.Max((int)needBase + 1024, baseLimit * 2)
@@ -52,16 +47,8 @@ namespace Sieve
         }
 
         /// <summary>
-        /// Segmented odds-only sieve for [start, end]. Requires base primes ≤ ⌊√end⌋.
+        /// Odds-only sieve for range [start, end] using base primes ≤ √end.
         /// </summary>
-        /// <remarks>
-        /// Invariants:
-        /// <list type="bullet">
-        /// <item><description><c>2 &lt;= start &lt;= end</c></description></item>
-        /// <item><description><paramref name="basePrimes"/> contains all primes ≤ ⌊√end⌋</description></item>
-        /// <item><description>Marks only odds in the segment; 2 is handled explicitly.</description></item>
-        /// </list>
-        /// </remarks>
         public static List<long> SieveOddsOnly(long start, long end, List<int> basePrimes)
         {
             var result = new List<long>();
@@ -69,22 +56,22 @@ namespace Sieve
             if (start <= 2 && 2 <= end)
                 result.Add(2);
 
-            // Map odds in [start, end] into a compact boolean window.
+            // Map odds in [start, end] to compact boolean array
             long firstOdd = (start <= 2) ? 3 : ((start % 2 == 0) ? start + 1 : start);
-            if (firstOdd > end) return result; // nothing odd to do
+            if (firstOdd > end) return result;
 
             int countOdds = (int)((end - firstOdd) / 2 + 1);
-            var isComposite = new bool[countOdds]; // index i -> value v = firstOdd + 2*i
+            var isComposite = new bool[countOdds]; // index i = value firstOdd + 2*i
 
             foreach (int p in basePrimes)
             {
-                if (p == 2) continue; // we only mark odds; even multiples are irrelevant here
+                if (p == 2) continue; // skip 2, only mark odd multiples
                 long pp = (long)p * p;
                 if (pp > end) break;
 
-                // first multiple of p within [firstOdd, end]
+                // Find first odd multiple of p in range
                 long first = Math.Max(pp, CeilDiv(firstOdd, p) * (long)p);
-                if ((first & 1) == 0) first += p; // align to odd multiple
+                if ((first & 1) == 0) first += p; // ensure odd
 
                 for (long v = first; v <= end; v += 2L * p)
                 {
@@ -107,7 +94,7 @@ namespace Sieve
         }
 
         /// <summary>
-        /// Integer ceil division: ⌈a / b⌉ for positive <paramref name="b"/>.
+        /// Ceiling division: ⌈a / b⌉.
         /// </summary>
         private static long CeilDiv(long a, int b)
         {

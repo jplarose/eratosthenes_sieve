@@ -1,16 +1,13 @@
 namespace Sieve
 {
     /// <summary>
-    /// Lucy-Hedgehog algorithm for counting primes up to x.
-    /// Time complexity: O(x^(3/4) / log x), efficient for very large values.
+    /// Lucy-Hedgehog prime counting algorithm with O(x^(3/4)) complexity.
     /// </summary>
     public static class LucyHedgehog
     {
         /// <summary>
-        /// Counts the number of primes less than or equal to x using the Lucy-Hedgehog algorithm.
+        /// Counts primes ≤ x using Lucy-Hedgehog algorithm.
         /// </summary>
-        /// <param name="x">Upper bound for prime counting</param>
-        /// <returns>Number of primes ≤ x</returns>
         public static long PrimeCount(long x)
         {
             if (x < 2) return 0;
@@ -22,11 +19,8 @@ namespace Sieve
         }
 
         /// <summary>
-        /// Counts the number of primes less than or equal to x using precomputed small primes.
+        /// Counts primes ≤ x using precomputed base primes up to √x.
         /// </summary>
-        /// <param name="x">Upper bound for prime counting</param>
-        /// <param name="smallPrimes">Precomputed primes up to at least sqrt(x)</param>
-        /// <returns>Number of primes ≤ x</returns>
         public static long PrimeCount(long x, List<int> smallPrimes)
         {
             if (x < 2) return 0;
@@ -34,70 +28,64 @@ namespace Sieve
 
             long sqrt_x = (long)Math.Sqrt(x);
 
-            // Create sorted list of unique values: {1, 2, ..., sqrt_x, x/sqrt_x, x/(sqrt_x-1), ..., x/1}
+            // Create value set: {1..√x} ∪ {x/1, x/2, ..., x/√x}
             var values = new HashSet<long>();
 
-            // Add small values 1..sqrt_x
+            // Add values 1..√x and x/1..x/√x
             for (long i = 1; i <= sqrt_x; i++)
+            {
                 values.Add(i);
-
-            // Add large values x/i for i = 1..sqrt_x
-            for (long i = 1; i <= sqrt_x; i++)
                 values.Add(x / i);
+            }
 
             var W = values.OrderByDescending(v => v).ToArray();
             int len = W.Length;
 
-            // S[n] = sum of integers from 1 to n = n*(n+1)/2 - 1 (excluding 1)
-            // So count of integers in [2..n] = n - 1
+            // Initialize S[n] = count of integers 2..n = n-1
             var S = new long[len];
             for (int i = 0; i < len; i++)
                 S[i] = W[i] - 1;
 
-            // Index lookup: value -> index in W
+            // Build value lookup table
             var valueToIndex = new Dictionary<long, int>();
             for (int i = 0; i < len; i++)
                 valueToIndex[W[i]] = i;
 
-            // Process each prime p
+            // Apply sieving for each prime
             foreach (int p in smallPrimes)
             {
                 if (p < 2) continue;
                 if ((long)p * p > x) break;
 
-                // Get S[p-1]
+                // Get count of primes < p
                 long sp_minus_1 = 0;
                 if (p > 1)
                 {
                     if (valueToIndex.ContainsKey(p - 1))
                         sp_minus_1 = S[valueToIndex[p - 1]];
                     else
-                        sp_minus_1 = (p - 1) - 1; // Direct calculation for missing values
+                        sp_minus_1 = (p - 1) - 1;
                 }
 
-                // Update S[n] for all n >= p^2
+                // Subtract multiples of p from counts
                 for (int i = 0; i < len; i++)
                 {
                     long n = W[i];
                     if (n < (long)p * p) break; // W is sorted descending
 
                     long q = n / p;
-                    long sq;
-                    if (valueToIndex.ContainsKey(q))
-                        sq = S[valueToIndex[q]];
-                    else
-                        sq = q - 1; // Direct calculation
+                    long sq = valueToIndex.ContainsKey(q) ? S[valueToIndex[q]] : q - 1;
 
                     S[i] -= (sq - sp_minus_1);
                 }
             }
 
-            // Result is S[x]
+            // Return final count
             return valueToIndex.ContainsKey(x) ? S[valueToIndex[x]] : x - 1;
         }
 
         /// <summary>
-        /// Generates all primes up to limit using the Sieve of Eratosthenes.
+        /// Simple sieve for generating base primes up to limit.
         /// </summary>
         private static List<int> SievePrimes(int limit)
         {

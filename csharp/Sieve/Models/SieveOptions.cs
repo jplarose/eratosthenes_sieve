@@ -1,41 +1,34 @@
 namespace Sieve
 {
     /// <summary>
-    /// Options that control how the sieve locates the nth prime.
+    /// Configuration options for prime sieve algorithms.
     /// </summary>
     public class SieveOptions
     {
         /// <summary>
-        /// How to choose the algorithm. <see cref="SieveMethod.Auto"/> selects
-        /// <see cref="SieveMethod.Regular"/> for n &lt; <see cref="RegularSieveThreshold"/>,
-        /// <see cref="SieveMethod.Segmented"/> for medium n, and 
-        /// <see cref="SieveMethod.PrimeCounting"/> for very large n (&gt;= 10M).
+        /// Sieve algorithm selection. Auto chooses Regular for n &lt; 1M,
+        /// Segmented for 1M-10M, and PrimeCounting for n ≥ 10M.
         /// </summary>
         public SieveMethod Method { get; set; } = SieveMethod.Auto;
 
         /// <summary>
-        /// Size of each segment when using the segmented sieve. Memory used by a single
-        /// segment is roughly one boolean per number in the segment.
-        /// If null, a default optimized size will be chosen automatically.
+        /// Segment size for segmented sieve (integers per segment).
+        /// If null, uses optimized default of 1M.
         /// </summary>
         public int? SegmentSize { get; set; }
 
         /// <summary>
-        /// Boundary used by <see cref="SieveMethod.Auto"/> to decide when to switch from
-        /// <see cref="SieveMethod.Regular"/> to <see cref="SieveMethod.Segmented"/>. Compared against n (0-based).
+        /// Threshold for Auto mode to switch from Regular to Segmented sieve.
         /// </summary>
         public long RegularSieveThreshold { get; set; } = 1_000_000;
 
         /// <summary>
-        /// Boundary used by <see cref="SieveMethod.Auto"/> to decide when to switch to
-        /// <see cref="SieveMethod.PrimeCounting"/>. For n >= this threshold, Lucy-Hedgehog
-        /// prime counting with binary search is used instead of linear sieving.
+        /// Threshold for Auto mode to switch to Lucy-Hedgehog prime counting.
         /// </summary>
         public long PrimeCountingThreshold { get; set; } = 10_000_000;
 
         /// <summary>
-        /// Optional callback to receive advisory messages about potentially suboptimal option
-        /// combinations. Logging is informational only; behavior is not changed.
+        /// Optional callback for advisory messages about suboptimal configurations.
         /// </summary>
         public Action<string>? Logger { get; set; }
     }
