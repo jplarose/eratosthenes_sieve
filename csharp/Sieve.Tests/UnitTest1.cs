@@ -24,10 +24,10 @@ namespace Sieve.Tests
                 (index: 10000000, expected: 179424691),
                 (index: 100000000, expected: 2038074751), //not required, just a fun challenge
 
-                // Only adds about 40 seconds to the test run
+                // Only adds about 30-40 seconds to the test run
                 (index: 999_999_999, expected: 22_801_763_489),
 
-                // Adds about 5:30 to the test run, but runnable under the current implementation
+                // Adds about 3-6 minutes to the test run depending on your machine, but runnable under the current implementation
                 //(index: 10_000_000_000, expected: 252_097_800_629)
             };
 
@@ -88,13 +88,15 @@ namespace Sieve.Tests
 
             var table = new ConsoleTable("Metric", "Value");
             table.AddRow("Target Index (0-based)", billionthIndex.ToString("N0"));
-            table.AddRow("Expected Prime\n Source: https://t5k.org/curios/page.php/22801763489.html", expectedBillionthPrime.ToString("N0"));
+            table.AddRow("Expected Prime (Source below)", expectedBillionthPrime.ToString("N0"));
             table.AddRow("Computed Prime", result.ToString("N0"));
             table.AddRow("Execution Time", $"{stopwatch.ElapsedMilliseconds:N0} ms ({stopwatch.Elapsed.TotalSeconds:F1} seconds)");
             table.AddRow("Method Used", "Lucy-Hedgehog Prime Counting");
             table.AddRow("Result", result == expectedBillionthPrime ? "✓ CORRECT" : "✗ INCORRECT");
 
             table.Write();
+
+            Console.WriteLine("\nBillionth Prime Source: https://t5k.org/curios/page.php/22801763489.html");
 
             if (stopwatch.ElapsedMilliseconds < 60_000) // Less than 1 minute
             {
